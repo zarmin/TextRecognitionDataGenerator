@@ -1,7 +1,10 @@
+#!/usr/bin/env python3
+
 import argparse
 import errno
 import os
 import sys
+import math
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
@@ -341,6 +344,15 @@ def parse_arguments():
         help="Define the image mode to be used. RGB is default, L means 8-bit grayscale images, 1 means 1-bit binary images stored with one pixel per byte, etc.",
         default="RGB",
     )
+    parser.add_argument(
+        "-dl",
+        "--directory-levels",
+        type=int,
+        nargs="?",
+        help="Define the number of subdirectory levels to create in the output directory. e.g: 0 means no subdirectories, 3 means 3 levels of subdirectories.",
+        default=0,
+
+    )
     return parser.parse_args()
 
 
@@ -469,6 +481,8 @@ def main():
                 [args.stroke_fill] * string_count,
                 [args.image_mode] * string_count,
                 [args.output_bboxes] * string_count,
+                [args.directory_levels] * string_count,
+                [string_count] * string_count,
             ),
         ),
         total=args.count,
@@ -481,8 +495,18 @@ def main():
         with open(
             os.path.join(args.output_dir, "labels.txt"), "w", encoding="utf8"
         ) as f:
+            if string_count < 1:
+                string_count = 1
+            digit_count = int(math.log10(string_count)) + 1   
+            directory_levels = max(min(args.directory_levels, digit_count - 1), 0)
             for i in range(string_count):
-                file_name = str(i) + "." + args.extension
+                name = str(i)
+                name = name.zfill(digit_count)
+                dir_levelled_name = ""
+                for j in range(directory_levels):
+                    dir_levelled_name = name[j] + "/" + dir_levelled_name
+                dir_levelled_name += name
+                file_name = dir_levelled_name + "." + args.extension
                 label = strings[i]
                 if args.space_width == 0:
                     label = label.replace(" ", "")

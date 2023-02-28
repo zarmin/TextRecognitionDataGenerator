@@ -1,5 +1,6 @@
 import os
 import random as rnd
+import math
 
 from PIL import Image, ImageFilter, ImageStat
 
@@ -54,6 +55,8 @@ class FakeTextDataGenerator(object):
         stroke_fill: str = "#282828",
         image_mode: str = "RGB",
         output_bboxes: int = 0,
+        directory_levels: int = 0,
+        string_count: int = 0,
     ) -> Image:
         image = None
 
@@ -249,6 +252,7 @@ class FakeTextDataGenerator(object):
         # Generate name for resulting image #
         #####################################
         # We remove spaces if space_width == 0
+
         if space_width == 0:
             text = text.replace(" ", "")
         if name_format == 0:
@@ -261,11 +265,23 @@ class FakeTextDataGenerator(object):
             print("{} is not a valid name format. Using default.".format(name_format))
             name = "{}_{}".format(text, str(index))
 
+        if string_count < 1:
+            string_count = 1
+        digit_count = int(math.log10(string_count)) + 1
+        name = name.zfill(digit_count)
+        directory_levels = max(min(directory_levels, digit_count - 1), 0)
+
         name = make_filename_valid(name, allow_unicode=True)
         image_name = "{}.{}".format(name, extension)
         mask_name = "{}_mask.png".format(name)
         box_name = "{}_boxes.txt".format(name)
         tess_box_name = "{}.box".format(name)
+
+        if directory_levels > 0:
+            for i in range(directory_levels):
+                out_dir = os.path.join(out_dir, name[i])
+        
+        os.makedirs(out_dir, exist_ok=True)
 
         # Save the image
         if out_dir is not None:
