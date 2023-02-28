@@ -13,7 +13,12 @@ def create_strings_from_file(filename: str, count: int) -> List[str]:
     strings = []
 
     with open(filename, "r", encoding="utf8") as f:
-        lines = [l[0:200] for l in f.read().splitlines() if len(l) > 0]
+        lines = []
+        for l in f.read().splitlines():
+            l = l.replace("\u200B", "")
+            if len(l) > 0:
+                lines.append(l[0:200])
+        
         if len(lines) == 0:
             raise Exception("No lines could be read in file")
         while len(strings) < count:
