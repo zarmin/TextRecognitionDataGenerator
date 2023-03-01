@@ -31,6 +31,23 @@ def margins(margin):
         return [int(margins[0])] * 4
     return [int(m) for m in margins]
 
+def create_directories(output_dir, levels, count):
+    if levels <= 0 or count <= 0:
+        return
+    digit_count = int(math.log10(count)) + 1   
+    directory_levels = max(min(levels, digit_count - 1), 0)
+    if directory_levels <= 0:
+        return
+    count_max_prefix = int(str(count-1).zfill(directory_levels)[0:directory_levels])
+    dir_count = pow(10, directory_levels)
+    dir_count = min(dir_count, count_max_prefix + 1)
+    for i in range(0, dir_count):
+        dir_name = str(i).zfill(directory_levels)
+        _output_dir = output_dir
+        for dir_part in dir_name:
+            _output_dir = os.path.join(_output_dir, dir_part)    
+        os.makedirs(_output_dir, exist_ok=True)
+        
 
 def parse_arguments():
     """
@@ -351,7 +368,13 @@ def parse_arguments():
         nargs="?",
         help="Define the number of subdirectory levels to create in the output directory. e.g: 0 means no subdirectories, 3 means 3 levels of subdirectories.",
         default=0,
-
+    )
+    parser.add_argument(
+        "-pcd",
+        "--pre-create-directories",
+        action="store_true",
+        help="When used with -dl, pre-create the subdirectories before writing the files.",
+        default=False,
     )
     return parser.parse_args()
 
@@ -446,6 +469,10 @@ def main():
 
     string_count = len(strings)
 
+    if args.pre_create_directories and args.directory_levels > 0:
+        create_directories(args.output_dir, args.directory_levels, string_count)
+
+
     p = Pool(args.thread_count)
     for _ in tqdm(
         p.imap_unordered(
@@ -482,6 +509,7 @@ def main():
                 [args.image_mode] * string_count,
                 [args.output_bboxes] * string_count,
                 [args.directory_levels] * string_count,
+                [args.pre_create_directories] * string_count,
                 [string_count] * string_count,
             ),
         ),

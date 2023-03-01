@@ -56,6 +56,7 @@ class FakeTextDataGenerator(object):
         image_mode: str = "RGB",
         output_bboxes: int = 0,
         directory_levels: int = 0,
+        pre_create_directories: bool = False,
         string_count: int = 0,
     ) -> Image:
         image = None
@@ -281,7 +282,8 @@ class FakeTextDataGenerator(object):
             for i in range(directory_levels):
                 out_dir = os.path.join(out_dir, name[i])
         
-        os.makedirs(out_dir, exist_ok=True)
+        if not pre_create_directories:
+            os.makedirs(out_dir, exist_ok=True)
 
         # Save the image
         if out_dir is not None:
