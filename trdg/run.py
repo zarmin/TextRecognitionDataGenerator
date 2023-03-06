@@ -376,6 +376,13 @@ def parse_arguments():
         help="When used with -dl, pre-create the subdirectories before writing the files.",
         default=False,
     )
+    parser.add_argument(
+        "-fpl",
+        "--full-path-labels",
+        action="store_true",
+        help="Use the full path of the image in the output labels.txt file.",
+        default=False,
+    )
     return parser.parse_args()
 
 
@@ -531,9 +538,11 @@ def main():
                 name = str(i)
                 name = name.zfill(digit_count)
                 dir_levelled_name = ""
+                if args.full_path_labels:
+                    dir_levelled_name = os.path.abspath(os.path.join(os.getcwd(), args.output_dir))
                 for j in range(directory_levels):
-                    dir_levelled_name = dir_levelled_name + name[j] + "/"
-                dir_levelled_name += name
+                    dir_levelled_name = os.path.join(dir_levelled_name, name[j])
+                dir_levelled_name = os.path.join(dir_levelled_name, name)
                 file_name = dir_levelled_name + "." + args.extension
                 label = strings[i]
                 if args.space_width == 0:
