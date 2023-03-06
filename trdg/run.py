@@ -532,7 +532,7 @@ def main():
                 name = name.zfill(digit_count)
                 dir_levelled_name = ""
                 for j in range(directory_levels):
-                    dir_levelled_name = name[j] + "/" + dir_levelled_name
+                    dir_levelled_name = dir_levelled_name + name[j] + "/"
                 dir_levelled_name += name
                 file_name = dir_levelled_name + "." + args.extension
                 label = strings[i]
