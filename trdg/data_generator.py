@@ -268,7 +268,7 @@ class FakeTextDataGenerator(object):
 
         if string_count < 1:
             string_count = 1
-        digit_count = int(math.log10(string_count)) + 1
+        digit_count = int(math.log10(string_count - 1)) + 1
         name = name.zfill(digit_count)
         directory_levels = max(min(directory_levels, digit_count - 1), 0)
 

@@ -34,7 +34,7 @@ def margins(margin):
 def create_directories(output_dir, levels, count):
     if levels <= 0 or count <= 0:
         return
-    digit_count = int(math.log10(count)) + 1   
+    digit_count = int(math.log10(count - 1)) + 1   
     directory_levels = max(min(levels, digit_count - 1), 0)
     if directory_levels <= 0:
         return
@@ -525,7 +525,7 @@ def main():
         ) as f:
             if string_count < 1:
                 string_count = 1
-            digit_count = int(math.log10(string_count)) + 1   
+            digit_count = int(math.log10(string_count - 1)) + 1   
             directory_levels = max(min(args.directory_levels, digit_count - 1), 0)
             for i in range(string_count):
                 name = str(i)
