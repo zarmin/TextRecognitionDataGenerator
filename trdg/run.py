@@ -12,6 +12,7 @@ import random as rnd
 import string
 import sys
 from multiprocessing import Pool
+from fontTools.ttLib import TTFont
 
 from tqdm import tqdm
 
@@ -385,6 +386,15 @@ def parse_arguments():
     )
     return parser.parse_args()
 
+def get_codepoints(filename):
+    if not filename.lower().endswith('.ttf') and not filename.lower().endswith('.otf'):
+        return None
+    
+    font = TTFont(filename)
+    cps = set()
+    for table in font['cmap'].tables:
+        cps.update(list(table.cmap.keys()))
+    return cps
 
 def main():
     """
@@ -416,18 +426,28 @@ def main():
 
     # Create font (path) list
     if args.font_dir:
-        fonts = [
+        fonts_orig = [
             os.path.join(args.font_dir, p)
             for p in os.listdir(args.font_dir)
             if os.path.splitext(p)[1] == ".ttf"
         ]
     elif args.font:
         if os.path.isfile(args.font):
-            fonts = [args.font]
+            fonts_orig = [args.font]
         else:
             sys.exit("Cannot open font")
     else:
-        fonts = load_fonts(args.language)
+        fonts_orig = load_fonts(args.language)
+
+    fonts = set()
+    font_codepoints = {}
+    for font in fonts_orig:
+        if os.path.isfile(font):
+            font = os.path.normpath(font)
+            font_codepoints[font] = get_codepoints(font)
+            fonts.add(font)
+            
+    fonts = list(fonts)
 
     # Creating synthetic sentences (or word)
     strings = []
@@ -488,6 +508,7 @@ def main():
                 [i for i in range(0, string_count)],
                 strings,
                 [fonts[rnd.randrange(0, len(fonts))] for _ in range(0, string_count)],
+                [font_codepoints] * string_count,
                 [args.output_dir] * string_count,
                 [args.format] * string_count,
                 [args.extension] * string_count,

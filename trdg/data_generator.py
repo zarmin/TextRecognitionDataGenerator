@@ -28,6 +28,7 @@ class FakeTextDataGenerator(object):
         index: int,
         text: str,
         font: str,
+        font_codepoints: dict[str, set],
         out_dir: str,
         size: int,
         extension: str,
@@ -60,6 +61,19 @@ class FakeTextDataGenerator(object):
         string_count: int = 0,
     ) -> Image:
         image = None
+
+        new_text = []
+        if font_codepoints is not None:
+            for c in text:
+                if ord(c) in font_codepoints[font]:
+                    new_text.append(c)
+                else:
+                    print("Character {} not in font {}".format(c, font))
+            text = "".join(new_text)
+            new_text = None
+        
+        if len(text) == 0:
+            return None
 
         margin_top, margin_left, margin_bottom, margin_right = margins
         horizontal_margin = margin_left + margin_right
