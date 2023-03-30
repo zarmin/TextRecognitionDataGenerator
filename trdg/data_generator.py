@@ -77,7 +77,7 @@ class FakeTextDataGenerator(object):
                     if c in font_codepoint:
                         new_text.append(c)
                     else:
-                        print("Character {} not in font {}".format(c, font))
+                        print("Character {} ({}) not in font {}".format(c, ord(c), font))
                 text = "".join(new_text)
                 new_text = None
         
@@ -160,7 +160,10 @@ class FakeTextDataGenerator(object):
             )
             new_height = size - vertical_margin
             if new_height <= 0 or new_width <= 0:
-                print("Invalid size: {}x{} for text '{}' and font {}".format(new_width, new_height, text, font))
+                codepoints = []
+                for c in text:
+                    codepoints.append(str(ord(c)))
+                print("Invalid size: {}x{} for text '{}' ({}) and font {}".format(new_width, new_height, text, ','.join(codepoints), font))
                 return None
             resized_img = distorted_img.resize(
                 (new_width, new_height), Image.Resampling.LANCZOS
