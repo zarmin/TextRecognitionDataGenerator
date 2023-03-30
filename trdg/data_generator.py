@@ -160,7 +160,7 @@ class FakeTextDataGenerator(object):
             )
             new_height = size - vertical_margin
             if new_height <= 0 or new_width <= 0:
-                print("Invalid size: {}x{} for text {}".format(new_width, new_height, text))
+                print("Invalid size: {}x{} for text '{}' and font {}".format(new_width, new_height, text, font))
                 return None
             resized_img = distorted_img.resize(
                 (new_width, new_height), Image.Resampling.LANCZOS
