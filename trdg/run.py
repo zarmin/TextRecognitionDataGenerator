@@ -5,6 +5,8 @@ import errno
 import os
 import sys
 import math
+import copy
+import pickle
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
@@ -15,6 +17,8 @@ from multiprocessing import Pool
 from fontTools.ttLib import TTFont
 
 from tqdm import tqdm
+
+import trdg.worker_storage as ws
 
 from trdg.data_generator import FakeTextDataGenerator
 from trdg.string_generator import (
@@ -404,6 +408,10 @@ def get_codepoints(filename):
             cps.add(chr(key))
     return cps
 
+def worker_init(font_codepoints_pickled):
+    ws.font_codepoints = pickle.loads(font_codepoints_pickled)
+    print("Worker init done")
+
 def main():
     """
     Description: Main function
@@ -456,7 +464,6 @@ def main():
                 font = os.path.normpath(font)
                 font_codepoints[font] = get_codepoints(font)
                 fonts.add(font)
-                print("Max : " + str(ord(max(font_codepoints[font]))))
                 
         fonts = list(fonts)
     else:
@@ -512,8 +519,8 @@ def main():
     if args.pre_create_directories and args.directory_levels > 0:
         create_directories(args.output_dir, args.directory_levels, string_count)
 
-
-    p = Pool(args.thread_count)
+    font_codepoints_pickled = pickle.dumps(font_codepoints, protocol=pickle.HIGHEST_PROTOCOL)
+    p = Pool(processes=args.thread_count, initializer=worker_init, initargs=(font_codepoints_pickled, ))
     for _ in tqdm(
         p.imap_unordered(
             FakeTextDataGenerator.generate_from_tuple,
@@ -521,7 +528,6 @@ def main():
                 [i for i in range(0, string_count)],
                 strings,
                 [fonts[rnd.randrange(0, len(fonts))] for _ in range(0, string_count)],
-                [font_codepoints] * string_count,
                 [args.output_dir] * string_count,
                 [args.format] * string_count,
                 [args.extension] * string_count,

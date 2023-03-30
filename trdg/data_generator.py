@@ -12,6 +12,7 @@ try:
 except ImportError as e:
     print("Missing modules for handwritten text generation.")
 
+import trdg.worker_storage as ws
 
 class FakeTextDataGenerator(object):
     @classmethod
@@ -28,7 +29,6 @@ class FakeTextDataGenerator(object):
         index: int,
         text: str,
         font: str,
-        font_codepoints: dict[str, set],
         out_dir: str,
         size: int,
         extension: str,
@@ -61,10 +61,10 @@ class FakeTextDataGenerator(object):
         string_count: int = 0,
     ) -> Image:
         image = None
-        
-        if font_codepoints is not None and font in font_codepoints:
+
+        if ws.font_codepoints is not None and font in ws.font_codepoints:
             new_text = []
-            font_codepoint = font_codepoints[font]
+            font_codepoint = ws.font_codepoints[font]
             needs_filtering = False
             for c in text:
                 if c not in font_codepoint:
