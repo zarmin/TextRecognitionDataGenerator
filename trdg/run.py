@@ -384,6 +384,13 @@ def parse_arguments():
         help="Use the full path of the image in the output labels.txt file.",
         default=False,
     )
+    parser.add_argument(
+        "-fc",
+        "--font-check",
+        action="store_true",
+        help="Check if the font supports the characters in the input text",
+        default=False,
+    )
     return parser.parse_args()
 
 def get_codepoints(filename):
@@ -393,7 +400,8 @@ def get_codepoints(filename):
     font = TTFont(filename)
     cps = set()
     for table in font['cmap'].tables:
-        cps.update(list(table.cmap.keys()))
+        for key in list(table.cmap.keys()):
+            cps.add(chr(key))
     return cps
 
 def main():
@@ -439,15 +447,20 @@ def main():
     else:
         fonts_orig = load_fonts(args.language)
 
-    fonts = set()
-    font_codepoints = {}
-    for font in fonts_orig:
-        if os.path.isfile(font):
-            font = os.path.normpath(font)
-            font_codepoints[font] = get_codepoints(font)
-            fonts.add(font)
-            
-    fonts = list(fonts)
+    font_codepoints = None
+    if args.font_check:
+        fonts = set()
+        font_codepoints = {}
+        for font in fonts_orig:
+            if os.path.isfile(font):
+                font = os.path.normpath(font)
+                font_codepoints[font] = get_codepoints(font)
+                fonts.add(font)
+                print("Max : " + str(ord(max(font_codepoints[font]))))
+                
+        fonts = list(fonts)
+    else:
+        fonts = list(fonts_orig)
 
     # Creating synthetic sentences (or word)
     strings = []

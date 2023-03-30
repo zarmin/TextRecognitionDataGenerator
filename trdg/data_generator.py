@@ -61,18 +61,28 @@ class FakeTextDataGenerator(object):
         string_count: int = 0,
     ) -> Image:
         image = None
-
-        new_text = []
-        if font_codepoints is not None:
+        
+        if font_codepoints is not None and font in font_codepoints:
+            new_text = []
+            font_codepoint = font_codepoints[font]
+            needs_filtering = False
             for c in text:
-                if ord(c) in font_codepoints[font]:
-                    new_text.append(c)
-                else:
-                    print("Character {} not in font {}".format(c, font))
-            text = "".join(new_text)
-            new_text = None
+                if c not in font_codepoint:
+                    needs_filtering = True
+                    break
+
+            new_text = []
+            if needs_filtering:
+                for c in text:
+                    if c in font_codepoint:
+                        new_text.append(c)
+                    else:
+                        print("Character {} not in font {}".format(c, font))
+                text = "".join(new_text)
+                new_text = None
         
         if len(text) == 0:
+            print("Empty text, skipping")
             return None
 
         margin_top, margin_left, margin_bottom, margin_right = margins
