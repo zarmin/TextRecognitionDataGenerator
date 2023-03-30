@@ -148,11 +148,15 @@ class FakeTextDataGenerator(object):
                 distorted_img.size[0]
                 * (float(size - vertical_margin) / float(distorted_img.size[1]))
             )
+            new_height = size - vertical_margin
+            if new_height <= 0 or new_width <= 0:
+                print("Invalid size: {}x{} for text {}".format(new_width, new_height, text))
+                return None
             resized_img = distorted_img.resize(
-                (new_width, size - vertical_margin), Image.Resampling.LANCZOS
+                (new_width, new_height), Image.Resampling.LANCZOS
             )
             resized_mask = distorted_mask.resize(
-                (new_width, size - vertical_margin), Image.Resampling.NEAREST
+                (new_width, new_height), Image.Resampling.NEAREST
             )
             background_width = width if width > 0 else new_width + horizontal_margin
             background_height = size
