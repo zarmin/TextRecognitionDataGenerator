@@ -395,6 +395,13 @@ def parse_arguments():
         help="Check if the font supports the characters in the input text",
         default=False,
     )
+    parser.add_argument(
+        "-opt",
+        "--optimize-png",
+        action="store_true",
+        help="Optimize the generated png using PIL Image save",
+        default=False,
+    )
     return parser.parse_args()
 
 def get_codepoints(filename):
@@ -410,7 +417,6 @@ def get_codepoints(filename):
 
 def worker_init(font_codepoints_pickled):
     ws.font_codepoints = pickle.loads(font_codepoints_pickled)
-    print("Worker init done")
 
 def main():
     """
@@ -558,6 +564,7 @@ def main():
                 [args.directory_levels] * string_count,
                 [args.pre_create_directories] * string_count,
                 [string_count] * string_count,
+                [args.optimize_png] * string_count,
             ),
         ),
         total=args.count,

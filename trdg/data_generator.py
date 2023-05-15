@@ -59,6 +59,7 @@ class FakeTextDataGenerator(object):
         directory_levels: int = 0,
         pre_create_directories: bool = False,
         string_count: int = 0,
+        optimize_png: bool = False,
     ) -> Image:
         image = None
 
@@ -318,9 +319,9 @@ class FakeTextDataGenerator(object):
 
         # Save the image
         if out_dir is not None:
-            final_image.save(os.path.join(out_dir, image_name))
+            final_image.save(os.path.join(out_dir, image_name), optimize=optimize_png)
             if output_mask == 1:
-                final_mask.save(os.path.join(out_dir, mask_name))
+                final_mask.save(os.path.join(out_dir, mask_name), optimize=optimize_png)
             if output_bboxes == 1:
                 bboxes = mask_to_bboxes(final_mask)
                 with open(os.path.join(out_dir, box_name), "w") as f:
