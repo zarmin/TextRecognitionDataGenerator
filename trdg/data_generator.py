@@ -1,6 +1,9 @@
 import os
 import random as rnd
 import math
+import io
+import lmdb
+import queue
 
 from PIL import Image, ImageFilter, ImageStat
 
@@ -30,6 +33,7 @@ class FakeTextDataGenerator(object):
         text: str,
         font: str,
         out_dir: str,
+        is_lmdb: bool,        
         size: int,
         extension: str,
         skewing_angle: int,
@@ -60,6 +64,7 @@ class FakeTextDataGenerator(object):
         pre_create_directories: bool = False,
         string_count: int = 0,
         optimize_png: bool = False,
+        shared_queue = None,
     ) -> Image:
         image = None
 
@@ -301,7 +306,8 @@ class FakeTextDataGenerator(object):
         if string_count < 1:
             string_count = 1
         digit_count = int(math.log10(string_count - 1)) + 1
-        name = name.zfill(digit_count)
+        zfilled9_name = name.zfill(9)
+        name = name.zfill(digit_count)        
         directory_levels = max(min(directory_levels, digit_count - 1), 0)
 
         name = make_filename_valid(name, allow_unicode=True)
@@ -314,11 +320,18 @@ class FakeTextDataGenerator(object):
             for i in range(directory_levels):
                 out_dir = os.path.join(out_dir, name[i])
         
-        if not pre_create_directories:
+        if not is_lmdb and not pre_create_directories:
             os.makedirs(out_dir, exist_ok=True)
 
         # Save the image
-        if out_dir is not None:
+        # handle lmdb
+        if is_lmdb and out_dir is not None:
+            temp = io.BytesIO()
+            final_image.save(temp, format="png", optimize=optimize_png)            
+            if shared_queue is not None:
+                shared_queue.put((zfilled9_name, text.encode(), temp.getvalue()))
+            temp.close()
+        elif out_dir is not None:
             final_image.save(os.path.join(out_dir, image_name), optimize=optimize_png)
             if output_mask == 1:
                 final_mask.save(os.path.join(out_dir, mask_name), optimize=optimize_png)

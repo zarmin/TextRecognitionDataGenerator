@@ -7,18 +7,22 @@ import sys
 import math
 import copy
 import pickle
+import lmdb
+import functools
+import threading
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
 import random as rnd
 import string
 import sys
-from multiprocessing import Pool
+import multiprocessing
 from fontTools.ttLib import TTFont
 
 from tqdm import tqdm
 
 import trdg.worker_storage as ws
+from trdg.lmdb_processor import lmdb_processor 
 
 from trdg.data_generator import FakeTextDataGenerator
 from trdg.string_generator import (
@@ -64,6 +68,9 @@ def parse_arguments():
     )
     parser.add_argument(
         "--output_dir", type=str, nargs="?", help="The output directory", default="out/"
+    )
+    parser.add_argument(
+        "--lmdb", action="store_true", help="Output data to lmdb dataset"
     )
     parser.add_argument(
         "-i",
@@ -415,8 +422,12 @@ def get_codepoints(filename):
             cps.add(chr(key))
     return cps
 
+lmdb_env = None
+
 def worker_init(font_codepoints_pickled):
-    ws.font_codepoints = pickle.loads(font_codepoints_pickled)
+    ws.font_codepoints = pickle.loads(font_codepoints_pickled)    
+    global lmdb_env
+    ws.lmdb_env = lmdb_env
 
 def main():
     """
@@ -426,7 +437,7 @@ def main():
     # Argument parsing
     args = parse_arguments()
 
-    # Create the directory if it does not exist.
+    # Create the directory if it does not exist.    
     try:
         os.makedirs(args.output_dir)
     except OSError as e:
@@ -522,12 +533,28 @@ def main():
 
     string_count = len(strings)
 
-    if args.pre_create_directories and args.directory_levels > 0:
-        create_directories(args.output_dir, args.directory_levels, string_count)
+    is_lmdb = args.lmdb
+    if is_lmdb:
+        pass
+    else:
+        if args.pre_create_directories and args.directory_levels > 0:
+            create_directories(args.output_dir, args.directory_levels, string_count)
+        
 
     font_codepoints_pickled = pickle.dumps(font_codepoints, protocol=pickle.HIGHEST_PROTOCOL)
-    p = Pool(processes=args.thread_count, initializer=worker_init, initargs=(font_codepoints_pickled, ))
-    for _ in tqdm(
+
+    shared_queue = None    
+    
+    manager = multiprocessing.Manager()
+    if is_lmdb:
+        shared_queue = manager.Queue(maxsize = 4096)    
+        # lmdb_writer_thread = threading.Thread(target=lmdb_processor, args=(shared_queue, args.output_dir, string_count)) # for lmdb_processor with writemap support
+        lmdb_writer_thread = threading.Thread(target=lmdb_processor, args=(shared_queue, args.output_dir))
+        lmdb_writer_thread.start()          
+        
+    p = multiprocessing.Pool(processes=args.thread_count, initializer=worker_init, initargs=(font_codepoints_pickled, ))
+
+    pbar = tqdm(
         p.imap_unordered(
             FakeTextDataGenerator.generate_from_tuple,
             zip(
@@ -535,6 +562,7 @@ def main():
                 strings,
                 [fonts[rnd.randrange(0, len(fonts))] for _ in range(0, string_count)],
                 [args.output_dir] * string_count,
+                [is_lmdb] * string_count,
                 [args.format] * string_count,
                 [args.extension] * string_count,
                 [args.skew_angle] * string_count,
@@ -565,12 +593,18 @@ def main():
                 [args.pre_create_directories] * string_count,
                 [string_count] * string_count,
                 [args.optimize_png] * string_count,
+                [shared_queue] * string_count,
             ),
         ),
         total=args.count,
-    ):
-        pass
+    )
+
+    list(pbar)
+
     p.terminate()
+    
+    shared_queue.put(None)
+    lmdb_writer_thread.join()
 
     if args.name_format == 2:
         # Create file with filename-to-label connections
