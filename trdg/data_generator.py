@@ -295,18 +295,22 @@ class FakeTextDataGenerator(object):
             text = text.replace(" ", "")
         if name_format == 0:
             name = "{}_{}".format(text, str(index))
+            name_plus1 = "{}_{}".format(text, str(index + 1))
         elif name_format == 1:
             name = "{}_{}".format(str(index), text)
+            name_plus1 = "{}_{}".format(str(index + 1), text)
         elif name_format == 2:
             name = str(index)
+            name_plus1 = str(index + 1)
         else:
             print("{} is not a valid name format. Using default.".format(name_format))
             name = "{}_{}".format(text, str(index))
+            name_plus1 = "{}_{}".format(text, str(index + 1))
 
         if string_count < 1:
             string_count = 1
         digit_count = int(math.log10(string_count - 1)) + 1
-        zfilled9_name = name.zfill(9)
+        zfilled9_name_plus1 = name_plus1.zfill(9)
         name = name.zfill(digit_count)        
         directory_levels = max(min(directory_levels, digit_count - 1), 0)
 
@@ -329,7 +333,7 @@ class FakeTextDataGenerator(object):
             temp = io.BytesIO()
             final_image.save(temp, format="png", optimize=optimize_png)            
             if shared_queue is not None:
-                shared_queue.put((zfilled9_name, text.encode(), temp.getvalue()))
+                shared_queue.put((zfilled9_name_plus1, text.encode(), temp.getvalue()))
             temp.close()
         elif out_dir is not None:
             final_image.save(os.path.join(out_dir, image_name), optimize=optimize_png)

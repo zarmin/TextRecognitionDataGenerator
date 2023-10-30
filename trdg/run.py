@@ -548,7 +548,6 @@ def main():
     manager = multiprocessing.Manager()
     if is_lmdb:
         shared_queue = manager.Queue(maxsize = 4096)    
-        # lmdb_writer_thread = threading.Thread(target=lmdb_processor, args=(shared_queue, args.output_dir, string_count)) # for lmdb_processor with writemap support
         lmdb_writer_thread = threading.Thread(target=lmdb_processor, args=(shared_queue, args.output_dir))
         lmdb_writer_thread.start()          
         
